@@ -35,6 +35,10 @@ It turns a user request into one executable TASK.md with explicit scope, non-goa
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [microspec_validate_task](core/contract.ts) | Mechanical TASK.md contract validation; registered in [opencode/index.ts](opencode/index.ts) and [pi/validate-tool.ts](pi/validate-tool.ts) |
 
+#### microspec_task
+
+While [microspec_task](pi/task-tool.ts) runs a role subagent in Pi, it streams a live trace of the child's work: one line per child tool call with the tool name, a truncated argument, the duration, and an `ok`/`FAIL` status. The window shows the last 8 lines, with earlier calls collapsed into a leading `… N more` counter, and while the child writes text instead of calling a tool, a `writing report… (N chars)` tail tracks the report's progress. The trace is drawn in the interactive transcript and reproduced in the HTML export; JSON and print modes have no UI and do not draw it.
+
 ### Roles
 
 | Role                                                       | Mission                                                                     |

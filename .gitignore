@@ -6,3 +6,7 @@ node_modules/
 
 # Logs
 *.log
+
+# Microspec task
+# See: https://github.com/alexeyco/microspec
+TASK.md

@@ -1,5 +1,76 @@
 # Changelog
 
+## 0.2.0
+
+Pi's `microspec_task` no longer stays silent for the tens of seconds a role subagent works and
+then dumps a single report: it streams a live trace of the child's work through the parent
+session, one line per child tool call, so that during a wave an operator can tell at a glance
+which agent is busy and which is stuck. The trace is windowed to the last 8 lines, carries a
+`writing report… (N chars)` tail while the child writes text instead of calling a tool, and stays
+above the report in the interactive transcript and in the HTML export. Model and formatting live
+in a new host-agnostic `core/trace.ts`; the Pi adapter only maps session events onto it. The
+release is Pi-only — the OpenCode plugin API offers no way to render inside the host's native
+subagent tool call, so OpenCode behavior is unchanged.
+
+### Live trace in `microspec_task`
+
+- One line per child tool call: the tool name, the argument rendered as a per-tool payload
+  summary and truncated to 60 characters, the duration (`340ms` below one second, `6.4s` at or
+  above, `…` while running) and the status `running` / `ok` / `FAIL`. The summary is the
+  `command` for `bash`, the `path` for `write`/`ls`, the `pattern` for `grep`/`find` and
+  `path:lines` for `read`/`edit` (e.g. `src/routes/health.ts:1-40`); an unmapped tool whose
+  arguments hold exactly one string field shows that value, and anything else falls back to
+  compact JSON. Only the first line is kept before truncation.
+- Status comes only from the tool result's `isError` flag and the abort state — the child's output
+  text is never parsed. Aborting a run closes in-flight entries as `FAIL` without inventing a
+  duration.
+- Partial results flow through `execute`'s `onUpdate` callback: tool events emit immediately,
+  while text-delta progress is throttled to at most one emit per 5 seconds, so a chatty child
+  cannot flood the parent UI.
+- The window shows the last 8 lines, with older calls collapsed into a leading `… N more` counter;
+  the writing tail reads `writing report… (1,214 chars)`, its digit grouping applied explicitly
+  rather than taken from the host locale.
+- Every result returned after the tracker exists carries `details: { role, trace, writingChars }`:
+  the success return pairs it with the child's report text in `content`, the aborted and error
+  returns pair it with `isError: true`.
+
+### `core/trace.ts`
+
+- New host-agnostic module holding the trace model and its formatting: `TraceEntry`,
+  `TraceStatus`, `TRACE_ARG_MAX = 60`, `formatTraceArg`, `formatDuration`, `formatTraceLine`,
+  `TRACE_MAX_VISIBLE_LINES = 8`, `formatWritingTail` and `renderTrace`. It imports nothing, so
+  `core/` stays free of host packages.
+- `pi/task-tool.ts` maps Pi session events onto that model through the exported, session-free
+  `createTraceTracker`, which a test can drive with a stubbed event array, a fake clock and a
+  recording `onUpdate`.
+
+### Rendering
+
+- `renderResult` on the `microspec_task` tool definition draws the windowed trace block above the
+  report text, both in the interactive transcript and in the HTML export, and keeps it visible
+  after completion. The `writing report… (N chars)` tail is drawn only while the call is still
+  running (`options.isPartial`); the final transcript and HTML export omit it, though
+  `details.writingChars` stays populated.
+- It returns a structural component (`render(width)` / `invalidate()`), so
+  `@earendil-works/pi-tui` is not imported into the adapter.
+- JSON and print modes have no UI and do not draw the trace.
+
+### Tests
+
+- `tests/trace.test.ts` — 28 golden-string tests for the formatter: argument truncation at 60
+  characters with a trailing ellipsis, `read`/`edit` as `path:lines`, sub-second and second-scale
+  durations, the `running` / `ok` / `FAIL` lines, the `… N more` counter, the 8-line window and
+  the writing tail.
+- `tests/pi-task-trace.test.ts` — 20 tests for the tracker (immediate emit on start, closing an
+  entry from the end event's own `durationMs`/`isError`, the 5-second text throttle, unrelated
+  events, abort → `FAIL`), the `onUpdate` callback contract, the result `details` and
+  `renderResult`.
+- The suite grows from 121 to 169 tests.
+
+### Docs
+
+- README documents the trace under `#### microspec_task` in the Tools section.
+
 ## 0.1.0
 
 Initial release. Task Contract — a task-scoped Micro-SDD flow: `/microspec.brief` turns a request
