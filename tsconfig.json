@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "types": ["node"],
+    "noEmit": true,
+    "target": "es2022",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noUncheckedIndexedAccess": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "index.ts",
+    "core/**/*.ts",
+    "opencode/**/*.ts",
+    "pi/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}
