@@ -20,6 +20,7 @@ import {
   retroInstruction,
 } from "../core/prompts.ts";
 import { ensureTaskIgnored } from "../core/gitignore.ts";
+import { forceBackgroundEvent } from "./background.ts";
 import {
   TASK_FILENAME,
   reportTask,
@@ -99,6 +100,13 @@ export default Plugin.define({
           text: SUBAGENT_CONTRACT,
         });
       }
+    });
+
+    // Force background dispatch for subagent calls that target a microspec
+    // role, so the orchestrator can run roles concurrently. The helper also
+    // matches legacy tool names defensively on older hosts.
+    ctx.tool.hook("execute.before", (event) => {
+      event.input = forceBackgroundEvent(event.tool, event.input, roleIds);
     });
 
     // ── Commands ────────────────────────────────────────────────────────

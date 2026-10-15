@@ -41,12 +41,18 @@ Topologically group Plan steps by `deps`:
 
 - One **wave** = all steps whose deps are already complete.
 - Dispatch one subagent per step using the role named in the step's `Owner` field, the whole
-  wave in a **single parallel batch**. Every Plan step is guaranteed to have an Owner (contract
-  rule).
+  wave in a **single parallel batch**. On OpenCode the batch is one set of background
+  dispatches, each returning immediately with `sessionID` and status `running` — record
+  each returned `sessionID` keyed to its step id, for the resumes in §8. Every Plan step
+  is guaranteed to have an Owner (contract rule).
+- On OpenCode, wave results are collected from subagent **completion notifications** — never
+  by polling or synchronous waiting. The next wave starts only once every notification for
+  the current wave has arrived.
 
 Dispatch mechanics:
 
-- **OpenCode**: `task` tool with the step's Owner as agent id.
+- **OpenCode**: `subagent` tool with the step's Owner as agent id; background
+  dispatch returns immediately with `sessionID` and status `running`.
 - **Pi**: `microspec_task` tool with the step's Owner as role.
 
 Each prompt contains:
@@ -69,16 +75,21 @@ checkboxes — the Result journal is history, checkboxes are state.
 
 ### 6. Verify and review
 
-After each wave:
+After each wave — on OpenCode, once every completion notification for the wave's dispatches
+has arrived; notifications, not polling, tell you a dispatch is done:
 
-- Dispatch `microspec-verifier` **in parallel** — one per affected acceptance criterion.
-  - **OpenCode**: `task` tool with agent `microspec-verifier`.
+- Dispatch `microspec-verifier` **in parallel** — one per affected acceptance criterion,
+  in one batch; on OpenCode these are background dispatches whose results are collected
+  from completion notifications the same way.
+  - **OpenCode**: `subagent` tool with agent `microspec-verifier`; background
+    dispatch returns immediately with `sessionID` and status `running`.
   - **Pi**: `microspec_task` tool with role `microspec-verifier`.
 
 After the **final wave**:
 
 - Dispatch `microspec-reviewer` once on the cumulative diff.
-  - **OpenCode**: `task` tool with agent `microspec-reviewer`.
+  - **OpenCode**: `subagent` tool with agent `microspec-reviewer`; background
+    dispatch returns immediately with `sessionID` and status `running`.
   - **Pi**: `microspec_task` tool with role `microspec-reviewer`.
 
 **Delivery step.** When `Delivery:` is `commit + push` or `commit only`, the delivery step
@@ -127,12 +138,16 @@ verified.
 ### 8. Failure handling and re-plan
 
 - Per failing step or criterion: one fix round — dispatch the step's Owner with the
-  verifier report appended to the prompt.
+  verifier report appended to the prompt. When continuing that Owner's prior dispatch
+  (a fix round on the same step), resume its session by passing the recorded `sessionID`
+  to the `subagent` tool. `task_id` is the deprecated v1 name for this field — never
+  use it.
 - At most two fix rounds per step in total. After the second round fails, or when a
   deadlock/unknown-deps situation the dependency guard cannot resolve by blocking one step
   is detected, dispatch `microspec-planner` (re-planning mission) with the current TASK.md state,
   completion state (ticked checkboxes, Result journal), and failure/verifier reports.
-  - **OpenCode**: `task` tool with agent `microspec-planner`.
+  - **OpenCode**: `subagent` tool with agent `microspec-planner`; background
+    dispatch returns immediately with `sessionID` and status `running`.
   - **Pi**: `microspec_task` tool with role `microspec-planner`.
 - The orchestrator presents the revised remaining plan to the user.
 - On user approval: replace the unticked Plan portion in TASK.md, append a Result journal
@@ -190,4 +205,7 @@ All acceptance criteria verified `PASS` (AC ledger complete) and reviewer report
 
 Steps whose deps are all complete run in **one wave** — dispatch all step Owners for that
 wave in a single batch. Independent verifier dispatches within a wave also batch together.
-Never dispatch dependent steps sequentially when they could share a wave.
+On OpenCode the batch is background dispatches and results are collected from completion
+notifications — never poll, never wait synchronously — with the next wave starting only once
+every notification for the current wave has arrived. Never dispatch dependent steps
+sequentially when they could share a wave.

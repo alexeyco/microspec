@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.4.0
+
+On OpenCode, microspec role dispatches now run strictly in background: a new `execute.before`
+tool hook forces `background: true` on every `subagent` call targeting a role, so the
+orchestrator cannot fall into synchronous waiting even when a call asks for foreground, and the
+skills describe the wave mechanics this enables — dispatches return immediately with
+`sessionID` and status `running`, wave results are collected from completion notifications
+rather than polling, and the next wave starts only once every notification of the current wave
+has arrived. OpenCode dispatch wording in all three skills moves to the v2 tool name `subagent`.
+Pi is unchanged: `microspec_task` keeps its own synchronous nested runner.
+
+### Plugin enforcement
+
+- New pure helper `forceBackgroundEvent(tool, input, roleIds)` in `opencode/background.ts`
+  matches the `subagent` tool and the legacy `task` alias the host still normalizes, reads the
+  role from `agent` with `subagent_type` as fallback, and returns a fresh input object with
+  `background: true` for any `ROLE_IDS` member — overriding an explicit `background: false` and
+  never mutating the original. Everything else passes through by reference.
+- `opencode/index.ts` registers the helper on `ctx.tool.hook("execute.before")`, reusing the
+  role set already built for `SUBAGENT_CONTRACT` injection.
+- `tests/opencode-background.test.ts` — 15 tests over the tool × role-field × background matrix,
+  pass-through and non-mutation guarantees; the suite grows from 188 to 203 tests.
+
+### Skill and docs wording
+
+- All nine OpenCode dispatch bullets across the three skills name the `subagent` tool with the
+  immediate `{ sessionID, status: "running" }` return; parallel batches are collected from
+  completion notifications.
+- `/microspec.execute` wave rules: a wave is one batch of background dispatches; results arrive
+  as completion notifications — never polled, never awaited synchronously; the next wave starts
+  only after every notification of the current wave arrived. The orchestrator records each
+  dispatch's `sessionID` keyed to its step id, and a fix-round resume passes that `sessionID`
+  (`task_id` is marked as the deprecated v1 field name).
+- `docs/agents.md`: the dispatch intro names the `subagent` tool and states that role dispatches
+  run in background mode, collected from completion notifications.
+
 ## 0.3.0
 
 `/microspec.retro` reports no longer double as issue drafts and no longer offer to file anything:
