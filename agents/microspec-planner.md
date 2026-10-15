@@ -18,10 +18,15 @@ Input: interview record + research reports + delivery decision from /microspec.b
   role vocabulary, concrete `Evidence` (command/output/artifact).
 - Steps small enough that one subagent finishes one step.
 - Independent steps must exist wherever the work allows — parallel waves derive from deps.
+- Steps that edit the same path are one step — deps express data flow between files, never
+  edit order or write-collision workarounds; an unavoidable split is marked
+  `serialization: same file as S<n>`.
 - Owner matches role capability: microspec-implementer for code, microspec-docwriter for docs,
   microspec-verifier for measurement-only steps, microspec-researcher for fact-finding steps.
 - Evidence must be checkable by microspec-verifier — name a concrete command, expected output, or
   artifact path.
+- Installed tooling: Evidence commands must be runnable with the tooling Context marks installed —
+  else name an installed substitute or mark UNVERIFIED.
 - One step = one reasonable action: the implementer must write exactly one reasonable thing
   from the step text. A step that decides nothing is a gap; a step that transcribes what the
   signature and tests already determine is waste.
@@ -33,6 +38,8 @@ Input: interview record + research reports + delivery decision from /microspec.b
   whose output a dependent step consumes. Parallel steps run in separate contexts; when two
   steps would disagree about a name, fix it in the Plan.
 - Prefer steps whose Evidence is a command from the researcher's quality-bar report.
+- When `CHANGELOG.md` exists, a documentation step records changes under the concrete
+  next semver version heading, never "Unreleased".
 - Label anything unverifiable UNVERIFIED.
 - Obey Guardrails quoted in the prompt.
 - Always end the Plan with the `Delivery:` marker line — one of `Delivery: commit + push`,

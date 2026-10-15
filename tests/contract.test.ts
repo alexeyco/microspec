@@ -2,6 +2,7 @@
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
   TASK_FILENAME,
   TASK_STATUSES,
@@ -272,6 +273,66 @@ describe("validateTask — rule 4: acceptance criteria", () => {
     const violations = validateTask(task);
     assert.ok(violations.some((v) => v.includes("Given, When, Then")));
   });
+
+  it("accepts a bullet whose Then appears only on a wrapped continuation line", () => {
+    const task = buildValidTask({
+      "Acceptance criteria":
+        "- **AC1** Given a clean repo\n  When I run tests\n  Then they pass",
+    });
+    const violations = validateTask(task);
+    assert.deepEqual(violations, []);
+  });
+
+  it("reports the bullet index when a wrapped bullet is missing a keyword", () => {
+    const task = buildValidTask({
+      "Acceptance criteria":
+        "- **AC1** Given a clean repo\n  When I run tests\n  Then they pass\n" +
+        "- **AC2** Given a dirty repo\n  When I clean it",
+    });
+    const violations = validateTask(task);
+    assert.ok(
+      violations.includes(
+        "Acceptance criteria: bullet 2 must contain Given, When, Then",
+      ),
+    );
+  });
+
+  it("ignores HTML comments when matching Given, When, Then", () => {
+    const task = buildValidTask({
+      "Acceptance criteria":
+        "- **AC1** Given a clean repo <!-- when --> <!-- then -->\n  ok",
+    });
+    const violations = validateTask(task);
+    assert.ok(
+      violations.includes(
+        "Acceptance criteria: bullet 1 must contain Given, When, Then",
+      ),
+    );
+  });
+
+  it("extracts the fenced example TASK.md from the task-contract skill and reports zero rule-4 violations", () => {
+    const skillPath = new URL(
+      "../skills/task-contract/SKILL.md",
+      import.meta.url,
+    );
+    const skill = readFileSync(skillPath, "utf8");
+    const blocks = skill.match(/```markdown\n([\s\S]*?)\n```/g) ?? [];
+    const example = blocks.find((b) => b.includes("## Acceptance criteria"));
+    assert.ok(
+      example !== undefined,
+      "skills/task-contract/SKILL.md must contain a fenced example TASK.md block",
+    );
+    const raw = example!.replace(/^```markdown\n/, "").replace(/\n```$/, "");
+    const violations = validateTask(raw);
+    assert.deepEqual(
+      violations.filter((v) => v.includes("Acceptance criteria")),
+      [],
+      "the example wraps AC bullet continuations; rule 4 must report nothing",
+    );
+    // The example is fully valid: it contains wrapped bullets and the
+    // unticked steps sit under status: draft, so no other rule fires.
+    assert.deepEqual(violations, []);
+  });
 });
 
 describe("validateTask — rule 5: plan", () => {
@@ -331,6 +392,57 @@ describe("validateTask — rule 6: result when done", () => {
     task = task.replace("Wave 1 complete.", "<!-- just a comment -->");
     const violations = validateTask(task);
     assert.ok(violations.some((v) => v.includes("Result")));
+  });
+
+  it("reports unticked plan steps when status is done", () => {
+    const task = buildValidTask({
+      Plan:
+        "- [x] **S21** First step (deps: —)\n  - Owner: microspec-implementer\n  - Evidence: done\n" +
+        "- [ ] **S22** Second step (deps: S21)\n  - Owner: microspec-implementer\n  - Evidence: pending",
+    }).replace("status: draft", "status: done");
+    const violations = validateTask(task);
+    assert.ok(
+      violations.includes("Plan: step S22 not ticked while status is done"),
+    );
+    assert.ok(
+      !violations.some((v) => v.includes("step S21")),
+      "ticked steps must not be reported",
+    );
+  });
+
+  it("falls back to the step ordinal when an unticked step line has no S-id", () => {
+    const task = buildValidTask({
+      Plan: "- [ ] Write code (deps: —)\n  - Owner: microspec-implementer\n  - Evidence: tests pass",
+    }).replace("status: draft", "status: done");
+    const violations = validateTask(task);
+    assert.ok(
+      violations.includes("Plan: step 1 not ticked while status is done"),
+    );
+  });
+
+  it("accepts done with all steps ticked and a non-empty result", () => {
+    const task = buildValidTask({
+      Plan:
+        "- [x] **S1** First step (deps: —)\n  - Owner: microspec-implementer\n  - Evidence: done\n" +
+        "- [x] **S2** Second step (deps: S1)\n  - Owner: microspec-implementer\n  - Evidence: done",
+    }).replace("status: draft", "status: done");
+    const violations = validateTask(task);
+    assert.deepEqual(violations, []);
+  });
+
+  it("still reports the rule 6 result violation when done with all steps ticked and empty result", () => {
+    const task = buildValidTask({
+      Plan: "- [x] **S1** Write code (deps: —)\n  - Owner: microspec-implementer\n  - Evidence: tests pass",
+      Result: "",
+    }).replace("status: draft", "status: done");
+    const violations = validateTask(task);
+    assert.ok(
+      violations.includes("Result: must not be empty when status is done"),
+    );
+    assert.ok(
+      !violations.some((v) => v.includes("not ticked")),
+      "ticked steps must not add a Plan violation",
+    );
   });
 });
 

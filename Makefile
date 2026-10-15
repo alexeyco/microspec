@@ -6,15 +6,23 @@ help: ## Show this help
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z_-]+:.*##/ {printf "  \033[1m%-6s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 .PHONY: fmt
-fmt: ## Format sources (prettier)
-	@npx --yes prettier@3 --write .
+fmt: node_modules ## Format sources (prettier)
+	@node_modules/.bin/prettier --write .
+
+.PHONY: fmt-check
+fmt-check: node_modules ## Verify formatting (prettier)
+	@node_modules/.bin/prettier --check .
 
 .PHONY: check
-check: node_modules ## Run repo sanity checks (same as CI)
+check: node_modules fmt-check ## Run repo sanity checks (same as CI)
 	@node scripts/check.mjs
 	@npm run typecheck --silent
 	@npm test --silent
 
-node_modules: package.json package-lock.json
+# Existence of node_modules is the only trigger; run `make install` to refresh after manifest changes.
+node_modules:
 	@npm ci --silent
-	@touch node_modules
+
+.PHONY: install
+install: ## Reinstall dependencies
+	@npm ci --silent

@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.5.0
+
+A retro of 0.4.0 collected eighteen findings about the flow breaking its own rules — a TUI
+feature that shipped invisible, a task closed with an unfinished step, a verdict of "PARTIAL"
+that quietly passed the gate, an orchestrator waiting forever for a crashed agent. All
+eighteen are fixed here; where it could be checked by code, it was moved out of advice and
+into the validator.
+
+### Task contract
+
+- A criterion wrapped over several lines is checked as one bullet — a "Then" on a continuation
+  line no longer fails validation.
+- HTML comments do not count: a commented-out "When" can no longer fake a complete criterion.
+- A task cannot be marked done while any plan step is unticked; the validator names the step.
+  A step you decided to skip is deleted from the plan, never left unchecked.
+- Each criterion states exactly one binding thing. A number in parentheses that a later step
+  can prove wrong is rejected — write a minimum ("at least one") or a real requirement
+  ("exactly 4").
+- The critic rejects a criterion that is impossible under the task's own guardrails or with
+  the tools the task lists, quoting the conflicting guardrail.
+
+### Agent rules
+
+- Researchers must inspect the environment where the result appears — the host config and the
+  other installed extensions that could hide or override the feature. Nobody looked there in
+  the last run, and a feature shipped invisible.
+- Drafters re-check every file path, line number and version they copy into a task with a
+  real command, and mark as an assumption anything they could not check.
+- A guardrail must be decidable: a rule like "do not install packages" that leaves agents
+  unsure whether `npx` counts is itself a violation.
+- Steps that edit the same file stay one step — dependencies express data flow between files,
+  never edit order. This removes the worst serialization of the last run: fourteen waves to
+  edit one file.
+- A plan may only name tools the machine actually has; when a `CHANGELOG.md` exists, changes
+  go under the real next version, not "Unreleased".
+- Verifiers have two verdicts: PASS or FAIL. "PARTIAL" is gone — half-proven is a FAIL that
+  names what is missing, and a claim of "all combinations" must show which ones ran.
+- Docwriters cannot reference wording another step owns but has not written yet.
+
+### Execution flow
+
+- `/microspec.brief` ends its turn after approval; it can no longer drift into building.
+- `/microspec.execute` on a finished task prints the last journal lines and the results
+  instead of an idle "re-run?" prompt.
+- Changing the delivery decision mid-run rewrites the task in one edit: the new marker, every
+  contradicted guardrail deleted, the change recorded in the journal.
+- If a dispatched agent never reports back (crash, abort), the wave no longer waits forever:
+  its session is resumed once to check, then the step is marked BLOCKED and handled.
+- A task is never done while any criterion lacks a PASS — the gate counts only PASS, and a
+  report claiming partial success is a FAIL.
+- Journal timestamps come from `date -u`, never from the writer's memory.
+
+### Build
+
+- `make check` no longer reinstalls dependencies after a manifest touch; `make install` does
+  that, when you want it.
+- `make check` now also checks formatting — prettier is a normal devDependency, `make fmt`
+  needs no network fetch, and formatter drift is no longer invisible.
+
 ## 0.4.0
 
 On OpenCode, microspec role dispatches now run strictly in background: a new `execute.before`

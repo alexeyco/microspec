@@ -207,23 +207,41 @@ export function validateTask(raw: string): string[] {
   if (acContent !== undefined) {
     const stripped = stripCommentsAndWhitespace(acContent);
     if (stripped !== "") {
-      // Find bullet lines (lines starting with - or *)
-      const bulletLines: string[] = [];
+      // Find bullets (lines starting with - or *), joining their wrapped
+      // continuation lines. Blank lines, following bullets, and headings
+      // end the current bullet; continuation lines are absorbed into it.
+      const bulletRe = /^\s*[-*]\s/;
+      const bullets: string[] = [];
+      let current: string | null = null;
       const lines = acContent.split("\n");
       for (const line of lines) {
-        if (/^\s*[-*]\s/.test(line)) {
-          bulletLines.push(line);
+        if (bulletRe.test(line)) {
+          if (current !== null) bullets.push(current);
+          current = line;
+        } else if (
+          current !== null &&
+          line.trim() !== "" &&
+          !/^\s*#/.test(line)
+        ) {
+          current += "\n" + line;
+        } else {
+          if (current !== null) bullets.push(current);
+          current = null;
         }
       }
-      if (bulletLines.length === 0) {
+      if (current !== null) bullets.push(current);
+      if (bullets.length === 0) {
         violations.push(
           "Acceptance criteria: must contain at least one bullet",
         );
       } else {
-        for (const [i, bullet] of bulletLines.entries()) {
-          const hasGiven = /\bgiven\b/i.test(bullet);
-          const hasWhen = /\bwhen\b/i.test(bullet);
-          const hasThen = /\bthen\b/i.test(bullet);
+        for (const [i, bullet] of bullets.entries()) {
+          // HTML comments never satisfy the keywords — a commented-out
+          // Given/When/Then must not fake a complete criterion.
+          const keywordText = bullet.replace(/<!--[\s\S]*?-->/g, "");
+          const hasGiven = /\bgiven\b/i.test(keywordText);
+          const hasWhen = /\bwhen\b/i.test(keywordText);
+          const hasThen = /\bthen\b/i.test(keywordText);
           if (!hasGiven || !hasWhen || !hasThen) {
             violations.push(
               `Acceptance criteria: bullet ${i + 1} must contain Given, When, Then`,
@@ -281,6 +299,20 @@ export function validateTask(raw: string): string[] {
       if (stripCommentsAndWhitespace(resultContent) === "") {
         violations.push("Result: must not be empty when status is done");
       }
+    }
+  }
+
+  // 7. Plan: no unticked steps when status: done. Cancelled steps are
+  // removed from the Plan by the orchestrator, so they never appear here.
+  if (header.status === "done" && planContent !== undefined) {
+    let stepIndex = 0;
+    for (const line of planContent.split("\n")) {
+      if (!/^\s*- \[[ xX]\]/.test(line)) continue;
+      stepIndex += 1;
+      if (!/^\s*- \[ \]/.test(line)) continue;
+      const idMatch = line.match(/\*\*(S\d+)\*\*/);
+      const id = idMatch ? idMatch[1]! : String(stepIndex);
+      violations.push(`Plan: step ${id} not ticked while status is done`);
     }
   }
 

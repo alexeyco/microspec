@@ -27,10 +27,18 @@ Check a TASK.md draft against the task-contract skill and report every violation
 6. **Guardrails** — rule 3: present and non-empty. Short imperatives, no explanations.
    Rule 10: plain imperatives are hard prohibitions; `[ask] <imperative>` marks a pause
    point where the agent must wait for user input. Rule 13: when the Plan's `Delivery:`
-   marker is `none`, Guardrails must contain `- Do not commit or push.`
+   marker is `none`, Guardrails must contain `- Do not commit or push.` Rule 3: a guardrail
+   must be decidable — a subagent must be able to decide membership from the repo alone;
+   unclear routine commands (tool caches, npx/network fetches, generated files, temp and
+   build artifacts, lockfile-only rewrites) are a violation, and the drafter must name the
+   boundary in the imperative itself.
 7. **Acceptance criteria** — rule 4: at least one bullet; every bullet contains Given, When,
-   Then (case-insensitive). Rule 11: an unfalsifiable criterion (no observable outcome, no
-   number where one is implied) is a violation.
+   Then (case-insensitive). Rule 11: Every acceptance criterion states one falsifiable
+   observable outcome and carries exactly one binding clause. A parenthetical count or
+   example that a later Plan step can invalidate is itself a violation — state the
+   threshold, or make the number normative; a criterion impossible to satisfy under the
+   quoted Guardrails or with the tooling the Context names is a violation, and the critic
+   must quote the conflicting guardrail.
 8. **Result** — rule 6: section present; non-empty when `status: done`.
 
 The mechanical subset (contract rules 1–6) is also enforced by `microspec_validate_task`; the
