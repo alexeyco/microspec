@@ -1,6 +1,6 @@
 {
   "name": "@alexeyco/microspec",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Task Contract — a task-scoped Micro-SDD flow for OpenCode and Pi: /microspec.brief turns a request into one executable TASK.md, /microspec.execute runs it through parallel subagent waves with evidence",
   "keywords": [
     "agents",

@@ -156,12 +156,13 @@ could not be confirmed in code.
 Analyze one completed (or blocked) run's evidence bundle — TASK.md and its Result journal,
 run counters (critic rounds, retries, verifier FAILs, stops, re-plans), session friction,
 `git diff --stat`, and the repo's quality bar — then return at most ten findings ranked by
-severity. Each finding is classified: **mechanical** (a deterministic check that should catch
-this — `core/contract.ts` rule, `scripts/check.mjs` rule, or repo lint/CI check),
-**judgment** (one prompt rule in a named `agents/*.md` or `skills/*/SKILL.md` that should be
-added or tightened), or **dead rule** (a rule that should be deleted because it no longer
-pays for itself). Findings target the plugin itself and the host repo's task environment,
-never the product code. Nothing is applied — the retrospective proposes, the user decides.
+severity. The finding shape and the category vocabulary live in
+[`skills/microspec-retro/SKILL.md`](../skills/microspec-retro/SKILL.md) (carried verbatim
+into the dispatch prompt), the mechanical/judgment/dead-rule classification lives in
+[`agents/microspec-retrospector.md`](../agents/microspec-retrospector.md), and the report
+opens with a single issues link. Findings target the plugin itself and the host repo's
+task environment, never the product code. Nothing is applied — the retrospective proposes,
+the user decides.
 Works with or without `TASK.md` (session-only mode when absent); a `blocked` run is a valid
 target. Most useful in the same session before the context is cleared. When TASK.md exists
 the orchestrator appends one append-only line to Result:
@@ -169,22 +170,6 @@ the orchestrator appends one append-only line to Result:
 
 **Mission:** turn one run's evidence into ranked, actionable improvements for the plugin
 and the repo's task environment — read-only, no edits.
-
-**Report format:** up to ten findings, each rendered as a GitHub issue body in the
-canonical shape defined below — quote line with `path:line`, why-and-change paragraph,
-`## Acceptance` checkboxes, severity as `[high|medium|low]` prefix and
-`microspec:<severity>` label. Each finding targeting the plugin is followed by a
-prefilled `issues/new` link pointing at the plugin's own repository (owner/repo read
-from `package.json` `repository`). Findings targeting the host repo (`repo environment`
-category) are reported without links. After the report, one offer to create the issues
-(`gh issue create` when available, the link otherwise).
-
-Categories: `contract gap`, `role gap`, `dead rule`, `plan quality`, `evidence quality`,
-`flow friction`, `repo environment`. Closing line:
-
-```
-SUMMARY: <n> findings — <top item>
-```
 
 ## Scoping
 
