@@ -6,7 +6,9 @@ the role's system prompt. The same files are consumed by both adapters.
 
 All nine roles are strictly subagents (`mode: subagent`) — never user-facing primaries.
 OpenCode registers them as subagents; Pi runs them only inside nested `microspec_task` sessions.
-They are dispatched via OpenCode `task` or Pi `microspec_task`, never directly by the user.
+They are dispatched via the OpenCode `subagent` tool or Pi `microspec_task`, never directly by
+the user. On OpenCode, microspec role dispatches run in background mode, and their results are
+collected from completion notifications.
 
 Two properties hold across the whole catalog:
 

@@ -42,7 +42,9 @@ One dispatch with the whole bundle in the prompt. That prompt must embed the
 finding shape and the category vocabulary from the dispatch prompt, never from its own
 file, so the prompt is the only channel that carries them.
 
-- **OpenCode**: `task` tool with agent `microspec-retrospector`.
+- **OpenCode**: `subagent` tool with agent `microspec-retrospector`; the plugin forces
+  background dispatch, so the call returns `{ sessionID, status: "running" }` immediately
+  and the result arrives as a completion notification.
 - **Pi**: `microspec_task` tool with role `microspec-retrospector`.
 
 ### 4. Rank and present

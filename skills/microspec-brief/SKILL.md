@@ -86,7 +86,9 @@ parallel batch**, while the first question round is pending.
 
 Dispatch mechanics:
 
-- **OpenCode**: `task` tool with agent `microspec-researcher`.
+- **OpenCode**: `subagent` tool with agent `microspec-researcher`. Background dispatch returns
+  immediately with `{ sessionID, status: "running" }`; parallel dispatches are collected as
+  completion notifications.
 - **Pi**: `microspec_task` tool with role `microspec-researcher`.
 
 Each prompt lists the exact questions to answer with paths and facts.
@@ -104,7 +106,9 @@ goes to the planner and drafter verbatim.
 Dispatch `microspec-planner` with the complete interview transcript, all research reports,
 and the delivery decision.
 
-- **OpenCode**: `task` tool with agent `microspec-planner`.
+- **OpenCode**: `subagent` tool with agent `microspec-planner`. Background dispatch returns
+  immediately with `{ sessionID, status: "running" }`; the result arrives as a completion
+  notification.
 - **Pi**: `microspec_task` tool with role `microspec-planner`.
 
 The planner returns the Plan skeleton (steps with deps, Owner, Evidence, Interface,
@@ -115,7 +119,9 @@ The planner returns the Plan skeleton (steps with deps, Owner, Evidence, Interfa
 Dispatch `microspec-drafter` with the complete interview transcript, all research reports, and the
 planner's Plan skeleton.
 
-- **OpenCode**: `task` tool with agent `microspec-drafter`.
+- **OpenCode**: `subagent` tool with agent `microspec-drafter`. Background dispatch returns
+  immediately with `{ sessionID, status: "running" }`; the result arrives as a completion
+  notification.
 - **Pi**: `microspec_task` tool with role `microspec-drafter`.
 
 The drafter writes the FULL draft around the plan — formalizes Goal, Non-goals, Context,
@@ -129,7 +135,9 @@ The drafter returns the entire TASK.md inside one ` ```markdown ` fence.
 
 Dispatch `microspec-critic` on the draft.
 
-- **OpenCode**: `task` tool with agent `microspec-critic`.
+- **OpenCode**: `subagent` tool with agent `microspec-critic`. Background dispatch returns
+  immediately with `{ sessionID, status: "running" }`; the result arrives as a completion
+  notification.
 - **Pi**: `microspec_task` tool with role `microspec-critic`.
 
 On `VERDICT: NEEDS-FIX`: route each violation to the correct fixer:
