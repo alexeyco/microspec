@@ -5,12 +5,18 @@ title: ""
 labels: []
 ---
 
+## What happened
+
 > <quoted decisive line> — `path:line`
 
-Why it matters and exactly what to change. Mechanical finding: the copy-pasteable check
-text. Judgment finding: the exact rule sentence and its file. Dead rule: the line to
-delete.
+## Why it matters
 
-## Acceptance
+<What breaks or misleads today, and who it affects.>
+
+## How to fix
+
+<The exact change to make.>
+
+## How to verify
 
 - [ ] <command + expected output, or Given/When/Then>

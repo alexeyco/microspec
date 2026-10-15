@@ -29,20 +29,9 @@ Evidence discipline: every finding quotes a decisive line from the bundle with i
 A finding resting on an impression is not a finding. One run is a sample of one — note
 `single-run` in the paragraph unless the same evidence appears twice.
 
-Report each finding in this shape, most severe first:
-
-```
-[high] <imperative title, ≤ 70 chars>
-> <quoted decisive line> — <path>:<line>
-<1–3 sentences: why it matters and exactly what to change; classification
-(mechanical / judgment / dead rule) and single-run noted inside>
-Acceptance: <command + expected output, or Given/When/Then>
-```
+Report each finding in the shape the dispatch prompt carries.
 
 At most 10; state how many were dropped and why.
-
-Categories: `contract gap`, `role gap`, `dead rule`, `plan quality`, `evidence quality`,
-`flow friction`, `repo environment`.
 
 Last line: `SUMMARY: <n> findings — <the top one>`, or `NOTHING TO CHANGE` with one
 line of evidence when the run shows no defect.

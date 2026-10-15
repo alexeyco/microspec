@@ -1,6 +1,6 @@
 ---
 name: microspec-retro
-description: "Run a retrospective via /microspec.retro — turn one run's evidence into ranked improvements to this plugin, offered as ready-to-file GitHub issues."
+description: "Run a retrospective via /microspec.retro — turn one run's evidence into ranked findings in four fixed sections, one issues link at the top of the report, nothing applied."
 ---
 
 # microspec-retro
@@ -37,112 +37,83 @@ Bundle rule: quote decisive lines, never paste whole files or raw logs.
 
 ### 3. Dispatch `microspec-retrospector`
 
-One dispatch with the whole bundle in the prompt.
+One dispatch with the whole bundle in the prompt. That prompt must embed the
+§Issue shape block and the §Categories table verbatim — the retrospector learns the
+finding shape and the category vocabulary from the dispatch prompt, never from its own
+file, so the prompt is the only channel that carries them.
 
 - **OpenCode**: `task` tool with agent `microspec-retrospector`.
 - **Pi**: `microspec_task` tool with role `microspec-retrospector`.
 
-### 4. Classify
+### 4. Rank and present
 
-Restate the three-way split:
+The report is exactly this, in order: the §Report header line printed once at the top,
+then each finding rendered in the shape defined in §Issue shape below, then the
+retrospector's closing line — `SUMMARY:` or `NOTHING TO CHANGE`, both defined in
+`agents/microspec-retrospector.md`. A zero-finding report is the header line plus that
+closing line. Severity order, most severe first; at most 10 findings, and when any are
+cut, state how many were dropped and why. No per-finding links, no offer step, no `gh`
+invocation — the one header link is the report's only issue mechanic.
 
-- **Mechanical** → deterministic check: `core/contract.ts` validation rule,
-  `scripts/check.mjs` rule, or repo lint/CI check. Prefer building the check over writing
-  a rule.
-- **Judgment** → one prompt rule in the exact `agents/*.md` or `skills/*/SKILL.md`, quoted
-  as the sentence to add.
-- **Dead rule** → delete it, naming file and line.
-
-### 5. Rank and present
-
-Render each finding in the issue shape defined in §Issue shape and filing below.
-Severity order, most severe first; at most 10; state how many were dropped and why.
-
-### 6. Offer issue creation
-
-Print the prefilled GitHub issue link under each finding (none for `repo environment`
-findings — those target the user's own repo), then the single offer question:
-`(1) all (2) numbered, e.g. 1,3 (3) skip — recommended: 1 and 2 for high`. On
-acceptance: one `gh issue create` per accepted finding, in report order, when `gh` is
-available — then list the created issue numbers; otherwise tell the user the printed
-links are the path. A retro still edits nothing except the one `retro:` journal line
-already defined.
-
-### 7. Apply nothing
+### 5. Apply nothing
 
 The retro proposes, the user decides. The plugin normally lives in a read-only install
 directory, so hand over copy-pasteable rule text and check specs, not edits. When the cwd
 **is** the plugin repo, findings may name exact files and rule text so the user can carry
 them into a `/microspec.brief` run.
 
-### 8. Journal and artifact
+### 6. Journal and artifact
 
 When TASK.md exists, the orchestrator appends one append-only line
 `- <ISO timestamp> retro: <n> findings — <top item>` to Result. The orchestrator owns every
 TASK.md edit; the status does not change. Write a file only when the user asks and names
 the path.
 
-## Issue shape and filing
+## Issue shape
 
-Canonical shape for the GitHub issues this plugin files about itself. The report the user
-reads in chat and the issue that gets filed are the same text — one format, one rendering,
-never two shapes for one finding.
-
-### Issue body
-
-Title: imperative, ≤ 70 chars, names the change. Body, verbatim shape:
+The single canonical shape of every finding this retro produces. The report the user
+reads in chat and the issue that gets filed are the same text — one format, one
+rendering, never two shapes for one finding. Verbatim shape:
 
 ```
+### [<severity>] <imperative title, ≤ 70 chars>
+
+## What happened
+
 > <quoted decisive line> — `<path>:<line>`
 
-<1–3 sentences: why it matters and exactly what to change. For a mechanical finding
-the copy-pasteable check text; for a judgment finding the exact rule sentence and its
-file; for a dead rule the line to delete.>
+## Why it matters
 
-## Acceptance
+<1–3 sentences: what this cost the run and why it must not happen again.>
+
+## How to fix
+
+<the exact change: file, and the rule sentence or check text to add, change, or delete.>
+
+## How to verify
 
 - [ ] <command + expected output, or Given/When/Then>
 ```
 
-Hard rules: no finding without a quoted line and `path:line`; no finding without at
-least one Acceptance checkbox; severity is one word — `high`, `medium`, `low` — and
-travels as the GitHub label `microspec:<severity>` and as the chat prefix `[high]`
-before the title; nothing else is metadata.
+Hard rules: no finding without a quoted line and `path:line` under `## What happened`;
+no finding without at least one `- [ ]` checkbox under `## How to verify`; at most 10
+findings, with the dropped count stated; severity is one word — `high`, `medium`,
+`low` — and travels as the GitHub label `microspec:<severity>` and as the chat prefix
+`[high]` before the title; nothing else is metadata.
 
-### Chat rendering
+### Report header
 
-Each finding rendered as (this IS the issue body, plus the link below it):
+One line above every finding, printed exactly once at the top of the report and nowhere
+else in it:
 
 ```
-### [high] <title>
-
-> <quote> — `path:line`
-
-<why + change>
-
-## Acceptance
-
-- [ ] <check>
-
-Issue: https://github.com/<owner>/<repo>/issues/new?title=<urlencoded title>&body=<urlencoded body>&labels=microspec%3Ahigh
+Issues: https://github.com/<owner>/<repo>/issues — file any finding here with label microspec:<severity>; findings for your own repo are advice only.
 ```
 
-Once after the whole report (not per finding), the offer:
-`Create these issues? (1) all (2) numbered, e.g. 1,3 (3) skip — recommended: 1 and 2 for high`.
-
-### Link construction
-
-`<owner>/<repo>` is resolved from the plugin package's own `package.json` `repository`
-field (the package root is two directories above this file), never from the cwd's
-`git remote`. Title and body URL-encoded; labels as `microspec%3Ahigh`. Findings whose
-target is the host repo (`repo environment` category) get no prefilled link — they are
-advice for the user's own repo; say so in one line under them.
-
-Creation: `gh issue create --title … --body … --label microspec:<severity>` when `gh`
-exists and is authenticated; otherwise the printed link is the path — say so. The same
-two shapes ship as repository templates — `.github/ISSUE_TEMPLATE/improvement.md` and
-`.github/PULL_REQUEST_TEMPLATE.md` — so hand-filed issues and PRs match what the flows
-produce.
+`<owner>/<repo>` comes from the plugin package's own `package.json` `repository` field.
+The package root is two directories above the skill file, so the field is read there —
+never from the cwd's `git remote`. A finding whose target is the user's own repo
+(`repo environment` category) is advice only; the header line already says so.
 
 ### Label vocabulary
 
@@ -170,6 +141,6 @@ open/closed; no other fields.
 - Never weaken a rule to make a run look clean.
 - Read-only — a retro edits nothing except the one Result line.
 - Keep the bundle small: quoted lines, not files.
-- One format, one rendering — a finding is reported in the issue shape and never in
-  another; a finding without a quote or without Acceptance is not offered as an issue.
-- Creation is an external write, so it happens only through the offer or an explicit yes.
+- One format, one rendering — a finding is reported in the §Issue shape and never in
+  another; a finding without a quoted line and `path:line` under `## What happened`, or
+  without a `- [ ]` checkbox under `## How to verify`, is not a finding.

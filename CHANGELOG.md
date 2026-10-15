@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.3.0
+
+`/microspec.retro` reports no longer double as issue drafts and no longer offer to file anything:
+every finding now arrives in one fixed four-section shape, the report opens with a single issues
+link to the plugin repository, and the user files by hand. The finding shape and the category
+vocabulary are single-homed in `skills/microspec-retro/SKILL.md` and carried verbatim into the
+`microspec-retrospector` dispatch prompt, so the subagent learns them from the prompt alone; the
+mechanical/judgment/dead-rule classification is single-homed in `agents/microspec-retrospector.md`.
+The GitHub issue template and the prose docs shrink to match.
+
+### Finding shape
+
+- Every finding is rendered in four fixed sections, in order: `## What happened`,
+  `## Why it matters`, `## How to fix`, `## How to verify`. The text the user reads in chat and
+  the text that gets filed are the same — one format, one rendering, never two shapes for one
+  finding.
+- `## What happened` must carry the decisive line quoted from the evidence bundle together with
+  its `path:line`; a finding without one is not a finding. `## How to verify` must carry at least
+  one acceptance checkbox. At most 10 findings, with the dropped count stated when any are cut.
+- Severity stays one word — `high`, `medium`, `low` — and travels as the GitHub label
+  `microspec:<severity>`; the label vocabulary is unchanged.
+
+### Issue mechanics
+
+- The report prints exactly one issues link, once, at the top; `<owner>/<repo>` is resolved from
+  the plugin package's own `package.json` `repository` field, never from the cwd's git remote.
+  Findings aimed at the user's own repo are advice only, and the header line says so.
+- The per-finding prefilled creation links and the `gh`-based filing offer are removed — the one
+  header link is the report's only issue mechanic, and filing is by hand.
+
+### Single homes
+
+- The finding shape block and the category table live only in `skills/microspec-retro/SKILL.md`;
+  the dispatch prompt embeds both verbatim, and the prompt is the only channel that carries them
+  to the retrospector.
+- The mechanical/judgment/dead-rule classification lives only in
+  `agents/microspec-retrospector.md`.
+
+### Docs and templates
+
+- `.github/ISSUE_TEMPLATE/improvement.md` is reduced to the four headings — the free-form body
+  prose and the separate acceptance section are gone.
+- The §microspec-retrospector entry in `docs/agents.md` is reduced to a pointer at the
+  single homes; the `/microspec.retro` step in `README.md` is reduced to the four-section
+  summary with the single header link, and its two classification-triad tails are dropped.
+
 ## 0.2.0
 
 Pi's `microspec_task` no longer stays silent for the tens of seconds a role subagent works and
