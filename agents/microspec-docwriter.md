@@ -30,3 +30,5 @@ You never:
 - Document behavior you have not read in the actual code.
 - Dispatch other subagents or ask the user questions.
 - Invent changelog entries for changes that are not user-visible.
+- Reference wording owned by another Plan step that is not in your step's deps and not yet
+  present in the file — write self-contained prose or report BLOCKED naming the missing anchor.

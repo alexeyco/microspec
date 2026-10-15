@@ -16,7 +16,8 @@ Parse `TASK.md` at the repo root (the task-contract skill defines the format).
 
 - **Missing** → tell the user to run `/microspec.brief` and stop.
 - **status: draft** → ask approval first; on approval set `status: ready`.
-- **status: done** → ask whether to re-run.
+- **status: done** → do not dispatch; print the Result journal's final line and the
+  completed AC ledger, then ask whether the user wants a follow-up or a re-run.
 - **status: blocked** → show the blocking Result entries; ask how to proceed.
 
 ### 2. Validate contract
@@ -47,7 +48,11 @@ Topologically group Plan steps by `deps`:
   is guaranteed to have an Owner (contract rule).
 - On OpenCode, wave results are collected from subagent **completion notifications** — never
   by polling or synchronous waiting. The next wave starts only once every notification for
-  the current wave has arrived.
+  the current wave has arrived. Match each completion notification against the wave's recorded
+  dispatches: a notification whose id is not in the current wave's record is not counted. A
+  dispatch that ends with no notification (crash, abort, provider outage) counts as failed —
+  resume its recorded handle once to confirm, then mark the step BLOCKED and route to §8.
+  The gate never waits indefinitely.
 
 Dispatch mechanics:
 
@@ -72,6 +77,11 @@ only when blocking that one step does not unblock the wave.
 When a step's implementer reports success and its evidence checks out, tick its checkbox:
 `- [ ]` → `- [x]`. On resume or blocked re-entry, completed steps are identified by ticked
 checkboxes — the Result journal is history, checkboxes are state.
+
+If a step is cancelled during execution — rejected alternative, dropped by re-plan — remove it
+from the Plan section entirely: an unticked `- [ ]` step in a `status: done` TASK.md is a
+contract violation the validator reports (`Plan: step <id> not ticked while status is done`)
+and blocks completion.
 
 ### 6. Verify and review
 
@@ -124,16 +134,24 @@ the prefilled compare link — `https://github.com/<owner>/<repo>/compare/<base>
 with `expand=1`, `title`, `body`, owner/repo from `git remote get-url origin` — and offer
 `gh pr create` with its own explicit yes.
 
+**Delivery amendment.** When the user amends `Delivery:` mid-run, rewrite the marker plus every
+contradicted guardrail in the same edit, re-run `microspec_validate_task`, and append
+`ruling: delivery <old> → <new> — <guardrails changed>` to Result. A contradicted guardrail is
+deleted, never left.
+
 **Scoped re-review.** After a fix round the reviewer re-checks only prior findings:
 each → `ADDRESSED` or `NOT-ADDRESSED` plus any breakage the fix introduced. No fresh
 full-diff review, no new rounds beyond the retry budget.
 
 ### 7. AC ledger
 
-Maintain a per-AC verification ledger: each AC → wave/verifier → PASS or FAIL. A wave
+Maintain a per-AC verification ledger: each AC → wave/verifier → PASS or FAIL; the ledger
+vocabulary has no `PARTIAL`. A wave
 verifies the ACs its steps affect. Before setting `status: done`, **every** AC must have at
-least one verifier PASS in the ledger. Re-dispatch `microspec-verifier` for any AC that was never
-verified.
+least one verifier PASS in the ledger. A `PARTIAL` report counts as FAIL for this gate.
+PARTIAL is not a verdict — incomplete evidence for any clause is FAIL naming the missing evidence.
+Never set `status: done` while any AC lacks a PASS. Re-dispatch `microspec-verifier` for any AC
+that was never verified.
 
 ### 8. Failure handling and re-plan
 
@@ -152,7 +170,8 @@ verified.
 - The orchestrator presents the revised remaining plan to the user.
 - On user approval: replace the unticked Plan portion in TASK.md, append a Result journal
   line `re-plan: <replaced ids> → <new ids>`, reset retries for new steps, continue
-  execution from the updated plan.
+  execution from the updated plan. Steps the re-plan drops leave the Plan with the replaced
+  portion — never stale `- [ ]` lines (§5).
 - `blocked` only when re-plan failed twice or the user rejects without an alternative.
 
 **Stops.** Four situations halt the wave for the user — never resolved by orchestrator
@@ -175,7 +194,8 @@ On answer continue; rejection without alternative → `status: blocked`.
 ### 9. Journaling
 
 The orchestrator appends Result entries as events occur — after each wave, and on every
-ruling, choice, stop, and re-plan:
+ruling, choice, stop, and re-plan (every timestamp comes from a fresh `date -u
++%Y-%m-%dT%H:%M:%SZ`, never from memory or estimate):
 
 ```
 - <ISO timestamp> wave <n>: <step ids> — <outcome> (evidence: <command/file>)
@@ -195,7 +215,8 @@ The orchestrator owns every TASK.md edit. Subagents only report.
 ### 10. Completion
 
 All acceptance criteria verified `PASS` (AC ledger complete) and reviewer reports no
-`BLOCKING` findings:
+`BLOCKING` findings; a `PARTIAL` report counts as FAIL here.
+PARTIAL is not a verdict — incomplete evidence for any clause is FAIL naming the missing evidence:
 
 - Set `status: done`, refresh `updated`.
 - Final user report: completed steps with evidence, `choice:` entries, `ruling:`

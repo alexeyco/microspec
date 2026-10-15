@@ -10,8 +10,10 @@
 ## Development
 
 Install dependencies and run the checks — same as CI. Tests require Node ≥ 22.18
-(default type stripping). `make check` runs `scripts/check.mjs`, typechecks the
-plugin, and runs the test suite:
+(default type stripping). `make check` verifies formatting with prettier, runs
+`scripts/check.mjs`, typechecks the plugin, and runs the test suite; it installs
+nothing when dependencies are present, so run `make install` after changing
+dependencies:
 
 ```sh
 npm ci

@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> This repository is frozen. Why reinvent the wheel when
+> [`@alexeyco/opencode-openspec`](https://github.com/alexeyco/opencode-openspec) already does
+> all of this — and better: use that package instead.
+
 # @alexeyco/microspec
 
 Task Contract: a task-scoped Micro-SDD flow for OpenCode and Pi — `/microspec.brief` produces one executable `TASK.md`, `/microspec.execute` runs it through parallel subagent waves.

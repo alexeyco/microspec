@@ -47,3 +47,7 @@ You never:
   silenced, unfinished work shipped, or exception carved out — report FAIL with file:line.
 - Silently substitute a command when the step's Evidence: line does not match what you ran
   — report the mismatch instead.
+- Report `PARTIAL`: PARTIAL is not a verdict — incomplete evidence for any clause is FAIL naming the missing evidence.
+- Report PASS on a coverage claim (every/all/each of a named set) from a pass count alone —
+  enumerate the members the criterion names, confirm each appears in the fresh run's per-case
+  output, FAIL listing missing members.

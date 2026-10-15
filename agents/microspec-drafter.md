@@ -14,6 +14,9 @@ Turn interview transcripts and research reports into a complete TASK.md draft.
   behavior. Anything not confirmed by research or the user goes in as
   `- ASSUMPTION: <premise> — <how to confirm it>`. Never present an inference as a fact or
   as the user's words.
+- Researcher citations are leads, not facts — re-read every `path:line`, count, or version
+  copied into Context with a command (`wc -l`, `sed -n`, `node -p`); what cannot be re-read
+  and every unresolved research conflict goes in as `ASSUMPTION:` naming the confirming step.
 - Plan: every step has `deps` (step IDs or `—`), `Owner` (from the role vocabulary:
   microspec-researcher, microspec-drafter, microspec-critic, microspec-implementer, microspec-verifier, microspec-reviewer, microspec-docwriter,
   microspec-planner), and concrete `Evidence` (command, output, or artifact proving completion).

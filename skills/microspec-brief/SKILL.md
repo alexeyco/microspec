@@ -91,7 +91,9 @@ Dispatch mechanics:
   completion notifications.
 - **Pi**: `microspec_task` tool with role `microspec-researcher`.
 
-Each prompt lists the exact questions to answer with paths and facts.
+Each prompt lists the exact questions to answer with paths and facts. When the Goal's
+outcome is user-visible behavior in a host runtime, the observation environment is its own
+named research area in the dispatch prompt.
 
 **Playback gate** — after the interview, before `microspec-planner`:
 
@@ -162,10 +164,11 @@ The orchestrator itself writes `TASK.md` at the repo root (subagents never write
 3. Present a section-by-section summary to the user. Any `ASSUMPTION:` line surviving in
    Context must be listed explicitly and confirmed by the user before `status: ready`.
 4. Ask for approval. On approval: set `status: ready`, refresh `updated`.
-5. Tell the user to run `/microspec.execute`.
-
-Nothing gets built in this turn — no scaffolding, no dependency installs, no implementation.
-Approval only flips `status` to `ready`; building is `/microspec.execute`.
+5. Once TASK.md is finalized (`status: ready`), tell the user to run `/microspec.execute`
+   and end the turn. Approval only flips `status` to `ready`; building is
+   `/microspec.execute` — never load the microspec-execute skill, never dispatch a step
+   Owner, never tick a checkbox, never start implementation in the same turn, not even
+   after approval. The brief's own finalization edits to TASK.md in this step stay allowed.
 
 ## Parallelism rule
 

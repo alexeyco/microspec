@@ -20,6 +20,9 @@ Gather verifiable facts about the codebase, docs, and dependencies for task brie
   CLAUDE.md / CONTRIBUTING.md.
 - Report each as an exact command line ready to paste into an Evidence line — not a description.
   If a command does not exist, say so explicitly rather than inventing one.
+- When the outcome is observed in a runtime, enumerate the full observation environment — host
+  config plus co-installed extensions/plugins — and report anything that can wrap, override, or
+  suppress the behavior being added. Observing that environment is research; changing it is not.
 
 Report format:
 

@@ -82,8 +82,8 @@ draft → ready → in_progress → done
    Result present as `## <name>` H2 headings.
 3. **Non-empty**: Goal, Non-goals, Context, Guardrails must have content. Non-goals
    violation: _"Non-goals must not be empty; write 'None' when there are none"_.
-4. **Acceptance criteria**: ≥ 1 bullet; every bullet contains Given, When, Then
-   (case-insensitive).
+4. **Acceptance criteria**: ≥ 1 bullet; every bullet, including its wrapped continuation lines,
+   contains Given, When, Then (case-insensitive).
 5. **Plan**: ≥ 1 checkbox step (`- [ ]`); every step block contains `Owner:` and `Evidence:`.
 6. **Result**: violation when `status: done` and Result is empty (HTML comments stripped
    before checking).
@@ -99,9 +99,12 @@ Rules 7–13 are drafting-level — enforced by `microspec-critic`, not by the v
    with exact identifiers and signatures.
 10. **Guardrail tiers**: plain imperative = hard prohibition; `[ask]` prefix = pause
     point; short imperatives, no explanations.
-11. **Criterion falsifiability**: every acceptance criterion states an observable outcome,
-    and a number where the requirement implies one; an unfalsifiable criterion is a
-    violation.
+11. **Criterion falsifiability**: Every acceptance criterion states one falsifiable observable
+    outcome and carries exactly one binding clause. A parenthetical count or example that a
+    later Plan step can invalidate is itself a violation — state the threshold, or make the
+    number normative; a criterion impossible to satisfy under the quoted Guardrails or with
+    the tooling the Context names is a violation, and the critic must quote the conflicting
+    guardrail.
 12. **Plan references**: `Owner` is a role id from the vocabulary; `deps` reference existing step ids or `—`.
 13. **Delivery**: the Plan ends with a `Delivery:` marker holding one of the three values
     (`commit + push`, `commit only`, `none`); when it is not `none` a matching final delivery
